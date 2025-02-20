@@ -14,6 +14,12 @@ PIPEDRIVE_API_URL_deal = 'https://suaempresa.pipedrive.com/api/v1/deals'
 
 PIPELINE_STAGE_ID = 1
 
+# Mapeamento de listas para funis
+LIST_TO_PIPELINE = {
+    "61": {"pipeline_id": 3, "stage_id": 11},  # Lista 61 → Funil Pós IA (estágio: Lead Frio)
+    "70": {"pipeline_id": 2, "stage_id": 6}   # Lista 70 → Funil Escola IA (estágio: Lead Frio)
+}
+
 UTM_FIELDS = {
     "utm_campaign": "16",
     "utm_medium": "18",

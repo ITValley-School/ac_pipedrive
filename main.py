@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from services import activecampaign, pipedrive
+from config.settings import LIST_TO_PIPELINE
 
 app = FastAPI()
 
@@ -41,3 +42,46 @@ def sync_contacts(list_id: int, pipeline_id: int):
             })
 
     return {"message": "Sincronização concluída", "results": results}
+
+@app.post("/webhook/activecampaign")
+async def activecampaign_webhook(payload: dict):
+    """
+    Webhook do ActiveCampaign que recebe leads e os cria no Pipedrive automaticamente.
+    """
+    try:
+        # Extrair informações do webhook
+        contact_data = payload.get("contact", {})
+        list_id = str(payload.get("list_id"))
+
+        if not list_id or list_id not in LIST_TO_PIPELINE:
+            return {"error": "Lista não configurada para sincronização."}
+
+        # Preparar dados do contato
+        contact_info = {
+            "email": contact_data.get("email", ""),
+            "phone": contact_data.get("phone", ""),
+            "first_name": contact_data.get("firstName", "Desconhecido"),
+            "last_name": contact_data.get("lastName", ""),
+            "utm_campaign": contact_data.get("utm_campaign", ""),
+            "utm_source": contact_data.get("utm_source", ""),
+            "utm_medium": contact_data.get("utm_medium", ""),
+            "utm_content": contact_data.get("utm_content", "")
+        }
+
+        # Criar contato no Pipedrive
+        person_id = pipedrive.create_contact_with_custom_fields(contact_info)
+
+        # Criar deal no pipeline correto
+        pipeline_info = LIST_TO_PIPELINE[list_id]
+        deal_title = f"Negócio com {contact_info['utm_campaign'] if contact_info['utm_campaign'] else 'Lead'}"
+        
+        pipedrive.create_deal_with_pipeline(
+            person_id=person_id,
+            pipeline_info=pipeline_info,
+            title=deal_title
+        )
+
+        return {"message": "Contato e negócio criados com sucesso!", "contact_id": person_id}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
