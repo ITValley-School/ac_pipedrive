@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form, Request
 from services import activecampaign, pipedrive
 from config.settings import LIST_TO_PIPELINE
 import json
@@ -45,11 +45,47 @@ def sync_contacts(list_id: int, pipeline_id: int):
     return {"message": "Sincronização concluída", "results": results}
 
 @app.post("/webhook/activecampaign")
-async def activecampaign_webhook(payload: dict):
+async def activecampaign_webhook(
+    request: Request,
+    url: str = Form(None),
+    type: str = Form(None),
+    date_time: str = Form(None),
+    initiated_by: str = Form(None),
+    initiated_from: str = Form(None),
+    list: str = Form(None),
+    contact_email: str = Form(None),
+    contact_phone: str = Form(None),
+    contact_first_name: str = Form(None),
+    contact_last_name: str = Form(None),
+    contact_utm_campaign: str = Form(None),
+    contact_utm_source: str = Form(None),
+    contact_utm_medium: str = Form(None),
+    contact_utm_content: str = Form(None)
+):
     """
     Webhook do ActiveCampaign que recebe leads e os cria no Pipedrive automaticamente.
+    Agora aceita JSON e application/x-www-form-urlencoded.
     """
     try:
+        # 🔍 Verificar se os dados vieram como JSON ou como Form URL Encoded
+        payload = {}
+        if request.headers.get("content-type") == "application/json":
+            payload = await request.json()
+        else:
+            # Construindo um dicionário dos dados recebidos via Form
+            payload = {
+                "contact": {
+                    "email": contact_email,
+                    "phone": contact_phone,
+                    "firstName": contact_first_name or "Desconhecido",
+                    "lastName": contact_last_name or "",
+                    "utm_campaign": contact_utm_campaign or "",
+                    "utm_source": contact_utm_source or "",
+                    "utm_medium": contact_utm_medium or "",
+                    "utm_content": contact_utm_content or "",
+                    "list_id": list
+                }
+            }
 
         # 🔍 Debug: Ver o que está chegando
         print(f"🔍 Payload Recebido: {json.dumps(payload, indent=4)}")
@@ -81,7 +117,7 @@ async def activecampaign_webhook(payload: dict):
         # Criar deal no pipeline correto
         pipeline_info = LIST_TO_PIPELINE[list_id]
         deal_title = f"Negócio com {contact_info['utm_campaign'] if contact_info['utm_campaign'] else 'Lead'}"
-        
+
         pipedrive.create_deal_with_pipeline(
             person_id=person_id,
             pipeline_info=pipeline_info,
