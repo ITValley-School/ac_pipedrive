@@ -136,7 +136,7 @@ def create_deal_with_pipeline(person_id: int, pipeline_info: dict, title: str):
         "visible_to": 3
     }
 
-    url = f"{PIPEDRIVE_API_URL}/deals?api_token={PIPEDRIVE_API_KEY}"
+    url = f"{PIPEDRIVE_API_URL_deal}/deals?api_token={PIPEDRIVE_API_KEY}"
     response = requests.post(
         url, 
         json=deal_payload, 

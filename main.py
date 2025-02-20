@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from services import activecampaign, pipedrive
 from config.settings import LIST_TO_PIPELINE
+import json
 
 app = FastAPI()
 
@@ -49,9 +50,15 @@ async def activecampaign_webhook(payload: dict):
     Webhook do ActiveCampaign que recebe leads e os cria no Pipedrive automaticamente.
     """
     try:
+
+        # 🔍 Debug: Ver o que está chegando
+        print(f"🔍 Payload Recebido: {json.dumps(payload, indent=4)}")
+
         # Extrair informações do webhook
         contact_data = payload.get("contact", {})
-        list_id = str(payload.get("list_id"))
+        list_id = str(contact_data.get("list_id"))
+
+        print(f"📌 List ID Recebido: {list_id}")  # Debug para ver se está pegando certo
 
         if not list_id or list_id not in LIST_TO_PIPELINE:
             return {"error": "Lista não configurada para sincronização."}
@@ -84,4 +91,5 @@ async def activecampaign_webhook(payload: dict):
         return {"message": "Contato e negócio criados com sucesso!", "contact_id": person_id}
 
     except Exception as e:
+        print(f"❌ Erro no Webhook: {str(e)}")  # Debug
         raise HTTPException(status_code=500, detail=str(e))
