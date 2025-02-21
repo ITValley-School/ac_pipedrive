@@ -15,22 +15,31 @@ app.include_router(activecampaign_router)
 @app.post("/api/webhook/contactAC")
 async def webhook(request: Request):
     try:
-        body = await request.body()  # Captura o corpo da requisição
+        body = await request.body()
         
-        #  Se o corpo for vazio, retorna erro controlado 
         if not body:
             logging.warning("Corpo da requisição está vazio.")
             return {"status": "error", "message": "Corpo da requisição vazio."}
 
-        data = await request.json()  # Decodifica o JSON
+        try:
+            #  Tenta processar normalmente
+            data = json.loads(body.decode("utf-8"))
 
-        #  Log dos dados recebidos
+            #  Se a resposta for uma string JSON dentro de JSON, tenta decodificar novamente
+            if isinstance(data, str):
+                logging.warning("JSON recebido como string. Tentando decodificar novamente.")
+                data = json.loads(data)
+
+        except json.JSONDecodeError as e:
+            logging.error(f"Erro ao decodificar JSON: {e}")
+            return {"status": "error", "message": "JSON inválido recebido."}
+
         logging.info(f"Dados recebidos do webhook: {data}")
 
         return {"status": "success"}
 
     except Exception as e:
-        logging.error(f"Erro ao processar webhook: {e}")
+        logging.error(f"Erro inesperado ao processar webhook: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.get("/contacts/{list_id}")
