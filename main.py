@@ -4,7 +4,7 @@ from config.settings import LIST_TO_PIPELINE
 import json
 from services.ActiveCampaign.contactACService import router as activecampaign_router
 import logging
-
+import urllib.parse
 
 app = FastAPI()
 
@@ -17,19 +17,18 @@ async def webhook(request: Request):
     try:
         body = await request.body()
         body_str = body.decode("utf-8")  # Converte para string
+
+        #decodificacao da url-encoded
+        parsed_data = urllib.parse.parse_qs(body_str)
+        
+        logging.info(f"Data recebida: {parsed_data}")
         
         if not body:
             logging.warning("Corpo da requisição está vazio.")
             return {"status": "error", "message": "Corpo da requisição vazio."}
 
-            #  Tenta processar normalmente
-            #data = json.loads(body.decode("utf-8"))
 
-            #  Se a resposta for uma string JSON dentro de JSON, tenta decodificar novamente
-            #if isinstance(data, str):
-            #    logging.warning("JSON recebido como string. Tentando decodificar novamente.")
-            #    data = json.loads(data)
-            
+
         return {"status": "success", "received_body": body_str}
 
     except Exception as e:
