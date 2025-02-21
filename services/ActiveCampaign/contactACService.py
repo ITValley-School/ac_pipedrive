@@ -64,7 +64,7 @@ def create_json_in_memory(data):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"contact_{timestamp}.json"
 
-    return filename, json_bytes
+    return filename, json_bytes.getvalue() # Retorna o nome do arquivo e os bytes do JSON
 
 def send_to_datalake(filename, json_bytes):
     """
@@ -80,7 +80,8 @@ def send_to_datalake(filename, json_bytes):
         "accept": "application/json"
     }
 
-    files = {"file": (filename, json_bytes, "application/json")}
+    # 🔥 Certifica que o arquivo é enviado como binário
+    files = {"file": (filename, io.BytesIO(json_bytes), "application/json")}
 
     response = requests.post(url, headers=headers, params=params, files=files)
 
