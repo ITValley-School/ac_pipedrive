@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, UploadFile
 import logging
 import urllib.parse
 import json
@@ -66,9 +66,9 @@ def create_json_in_memory(data):
 
     return filename, json_bytes.getvalue() # Retorna o nome do arquivo e os bytes do JSON
 
-def send_to_datalake(filename, json_bytes):
+async def send_to_datalake(filename: str, file: UploadFile):
     """
-    Envia o arquivo JSON para a API do Data Lake no formato multipart/form-data.
+    Envia um arquivo JSON para a API do Data Lake no formato multipart/form-data.
     """
     url = "https://app-orion-dev.azurewebsites.net/api/azure-datalake/uploadfile"
     params = {
@@ -80,8 +80,10 @@ def send_to_datalake(filename, json_bytes):
         "accept": "application/json"
     }
 
-    # 🔥 Certifica que o arquivo é enviado como binário
-    files = {"file": (filename, io.BytesIO(json_bytes), "application/json")}
+    # Lendo o arquivo como bytes
+    file_content = await file.read()
+    
+    files = {"file": (filename, io.BytesIO(file_content), "application/json")}
 
     response = requests.post(url, headers=headers, params=params, files=files)
 
