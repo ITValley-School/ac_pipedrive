@@ -33,7 +33,7 @@ async def webhook(request: Request):
         # Envia o JSON para a API do Data Lake
         response = send_to_datalake(filename, json_bytes)
 
-        return {"status": "success", "received_body": json_data}
+        return {"status": "success", "received_body": response}
 
     except Exception as e:
         logging.error(f"Erro inesperado ao processar webhook: {e}")
