@@ -16,27 +16,21 @@ app.include_router(activecampaign_router)
 async def webhook(request: Request):
     try:
         body = await request.body()
+        body_str = body.decode("utf-8")  # Converte para string
         
         if not body:
             logging.warning("Corpo da requisição está vazio.")
             return {"status": "error", "message": "Corpo da requisição vazio."}
 
-        try:
             #  Tenta processar normalmente
-            data = json.loads(body.decode("utf-8"))
+            #data = json.loads(body.decode("utf-8"))
 
             #  Se a resposta for uma string JSON dentro de JSON, tenta decodificar novamente
-            if isinstance(data, str):
-                logging.warning("JSON recebido como string. Tentando decodificar novamente.")
-                data = json.loads(data)
-
-        except json.JSONDecodeError as e:
-            logging.error(f"Erro ao decodificar JSON: {e}")
-            return {"status": "error", "message": "JSON inválido recebido."}
-
-        logging.info(f"Dados recebidos do webhook: {data}")
-
-        return {"status": "success"}
+            #if isinstance(data, str):
+            #    logging.warning("JSON recebido como string. Tentando decodificar novamente.")
+            #    data = json.loads(data)
+            
+        return {"status": "success", "received_body": body_str}
 
     except Exception as e:
         logging.error(f"Erro inesperado ao processar webhook: {e}")
