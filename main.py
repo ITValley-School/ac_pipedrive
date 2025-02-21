@@ -3,6 +3,7 @@ from services import activecampaign, pipedrive
 from config.settings import LIST_TO_PIPELINE
 import json
 from services.ActiveCampaign.contactACService import router as activecampaign_router
+import logging
 
 
 app = FastAPI()
@@ -13,11 +14,15 @@ app.include_router(activecampaign_router)
 
 @app.post("/api/webhook/contactAC")
 async def webhook(request: Request):
-    data = await request.json()
-    # Processa os dados recebidos do ActiveCampaign
-    print(f"Received webhook data: {data}")
-    # Adicione sua lógica aqui para manipular os dados
-    return {"status": "success"}
+   try:
+        data = await request.json()
+        # Processa os dados recebidos do ActiveCampaign
+        logging.info(f"Received webhook data: {data}")
+        # Adicione sua lógica aqui para manipular os dados
+        return {"status": "success"}
+   except Exception as e:
+        logging.error(f"Error processing webhook: {e}")
+        return {"status": "error", "message": str(e)}, 500
 
 @app.get("/contacts/{list_id}")
 def get_activecampaign_contacts(list_id: int):
