@@ -20,7 +20,7 @@ async def webhook(request: Request):
 
         #decodificacao da url-encoded
         parsed_data = urllib.parse.parse_qs(body_str)
-        
+
         logging.info(f"Data recebida: {parsed_data}")
         
         if not body:
@@ -29,7 +29,7 @@ async def webhook(request: Request):
 
 
 
-        return {"status": "success", "received_body": body_str}
+        return {"status": "success", "received_body": parsed_data}
 
     except Exception as e:
         logging.error(f"Erro inesperado ao processar webhook: {e}")
