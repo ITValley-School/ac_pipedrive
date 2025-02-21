@@ -3,37 +3,11 @@ from services import activecampaign, pipedrive
 from config.settings import LIST_TO_PIPELINE
 import json
 from services.ActiveCampaign.contactACService import router as activecampaign_router
-import logging
-import urllib.parse
+
 
 app = FastAPI()
-
-
 app.include_router(activecampaign_router)
 
-
-@app.post("/api/webhook/contactAC")
-async def webhook(request: Request):
-    try:
-        body = await request.body()
-        body_str = body.decode("utf-8")  # Converte para string
-
-        #decodificacao da url-encoded
-        parsed_data = urllib.parse.parse_qs(body_str)
-
-        logging.info(f"Data recebida: {parsed_data}")
-        
-        if not body:
-            logging.warning("Corpo da requisição está vazio.")
-            return {"status": "error", "message": "Corpo da requisição vazio."}
-
-
-
-        return {"status": "success", "received_body": parsed_data}
-
-    except Exception as e:
-        logging.error(f"Erro inesperado ao processar webhook: {e}")
-        return {"status": "error", "message": str(e)}
 
 @app.get("/contacts/{list_id}")
 def get_activecampaign_contacts(list_id: int):
