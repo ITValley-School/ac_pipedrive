@@ -14,15 +14,24 @@ app.include_router(activecampaign_router)
 
 @app.post("/api/webhook/contactAC")
 async def webhook(request: Request):
-   try:
-        data = await request.json()
-        # Processa os dados recebidos do ActiveCampaign
-        logging.info(f"Received webhook data: {data}")
-        # Adicione sua lógica aqui para manipular os dados
+    try:
+        body = await request.body()  # Captura o corpo da requisição
+        
+        #  Se o corpo for vazio, retorna erro controlado 
+        if not body:
+            logging.warning("Corpo da requisição está vazio.")
+            return {"status": "error", "message": "Corpo da requisição vazio."}
+
+        data = await request.json()  # Decodifica o JSON
+
+        #  Log dos dados recebidos
+        logging.info(f"Dados recebidos do webhook: {data}")
+
         return {"status": "success"}
-   except Exception as e:
-        logging.error(f"Error processing webhook: {e}")
-        return {"status": "error", "message": str(e)}, 500
+
+    except Exception as e:
+        logging.error(f"Erro ao processar webhook: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/contacts/{list_id}")
 def get_activecampaign_contacts(list_id: int):
