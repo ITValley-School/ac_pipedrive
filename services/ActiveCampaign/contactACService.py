@@ -16,23 +16,21 @@ async def webhook(request: Request):
         body = await request.body()
         body_str = body.decode("utf-8")  # Converte para string
 
-        #decodificacao da url-encoded
         parsed_data = urllib.parse.parse_qs(body_str)
-
         logging.info(f"Data recebida: {parsed_data}")
         
         if not body:
             logging.warning("Corpo da requisição está vazio.")
             return {"status": "error", "message": "Corpo da requisição vazio."}
         
-        #  Processa os dados usando a função separada
+        # Processa os dados
         json_data = parse_webhookdata_json(body_str)
 
-        #  Cria JSON na memória
-        filename, json_bytes = create_json_in_memory(json_data)
+        # Cria JSON como UploadFile
+        json_file = create_json_in_memory(json_data)
 
-        # Envia o JSON para a API do Data Lake
-        response = send_to_datalake(filename, json_bytes)
+        # Envia para o Data Lake
+        response = send_to_datalake(json_file)
 
         return {"status": "success", "received_body": response}
 
@@ -54,28 +52,19 @@ def parse_webhookdata_json(body_str: str):
     return cleaned_data
 
 
-def create_json_in_memory(data: dict):
+def create_json_in_memory(data: dict) -> UploadFile:
     """
-    Cria um arquivo JSON na memória usando BytesIO. #apenas para fins de demonstração
+    Cria um UploadFile JSON na memória para envio.
     """
-    
-    # Converte o dicionário para um JSON string
     json_str = json.dumps(data, ensure_ascii=False, indent=4)
-
-    # Cria um objeto BytesIO e escreve o JSON nele
-    json_io = BytesIO(json_str.encode('utf-8'))
-
-    # Cria um objeto BytesIO e escreve o JSON nele
-    json_io = BytesIO(json_str.encode('utf-8'))
+    json_bytes = BytesIO(json_str.encode('utf-8'))
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Define um nome para o arquivo (opcional, mas útil em Uploads)
-    json_io.name = f"contact_{timestamp}.json"
+    filename = f"contact_{timestamp}.json"
 
-    return json_io
+    return UploadFile(filename=filename, file=json_bytes, content_type="application/json")
 
-def send_to_datalake(filename: str, file: UploadFile):
+def send_to_datalake(file: UploadFile):
     """
     Envia um arquivo JSON para a API do Data Lake no formato multipart/form-data.
     """
@@ -89,10 +78,11 @@ def send_to_datalake(filename: str, file: UploadFile):
         "accept": "application/json"
     }
 
-    file_content = file.file.read()  # Sem await pois é síncrono
+    # Move o ponteiro para o início do arquivo
+    file.file.seek(0)
 
     files = {
-        "file": (filename, file_content, "application/json")
+        "file": (file.filename, file.file.read(), "application/json")  # Pega o nome direto do UploadFile
     }
 
     response = requests.post(url, params=params, headers=headers, files=files)
