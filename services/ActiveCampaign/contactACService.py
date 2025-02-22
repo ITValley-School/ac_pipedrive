@@ -5,7 +5,7 @@ import json
 from io import BytesIO
 import datetime
 import requests
-import httpx
+
 
 
 router = APIRouter()
@@ -75,7 +75,7 @@ def create_json_in_memory(data: dict):
 
     return json_io
 
-async def send_to_datalake(filename: str, file: UploadFile):
+def send_to_datalake(filename: str, file: UploadFile):
     """
     Envia um arquivo JSON para a API do Data Lake no formato multipart/form-data.
     """
@@ -89,13 +89,12 @@ async def send_to_datalake(filename: str, file: UploadFile):
         "accept": "application/json"
     }
 
-    # Lê o conteúdo do arquivo enviado pelo FastAPI
-    file_content = await file.read()
+    file_content = file.file.read()  # Sem await pois é síncrono
 
-    async with httpx.AsyncClient() as client:
-        files = {
-            "file": (filename, file_content, "application/json")
-        }
-        response = await client.post(url, params=params, headers=headers, files=files)
+    files = {
+        "file": (filename, file_content, "application/json")
+    }
+
+    response = requests.post(url, params=params, headers=headers, files=files)
 
     return response.json()
