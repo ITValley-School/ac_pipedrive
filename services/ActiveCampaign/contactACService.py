@@ -56,7 +56,7 @@ def parse_webhookdata_json(body_str: str):
 
 def create_json_in_memory(data: dict):
     """
-    Cria um arquivo JSON na memória usando BytesIO.
+    Cria um arquivo JSON na memória usando BytesIO. #apenas para fins de demonstração
     """
     
     # Converte o dicionário para um JSON string
