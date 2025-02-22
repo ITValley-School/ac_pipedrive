@@ -26,11 +26,11 @@ async def webhook(request: Request):
         # Processa os dados
         json_data = parse_webhookdata_json(body_str)
 
-        # Cria JSON como UploadFile
-        json_file = create_json_in_memory(json_data)
+        # Cria JSON na memória
+        filename, json_file = create_json_in_memory(json_data)
 
         # Envia para o Data Lake
-        response = send_to_datalake(json_file)
+        response = send_to_datalake(filename, json_file)
 
         return {"status": "success", "received_body": response}
 
@@ -52,19 +52,19 @@ def parse_webhookdata_json(body_str: str):
     return cleaned_data
 
 
-def create_json_in_memory(data: dict) -> UploadFile:
+def create_json_in_memory(data: dict):
     """
-    Cria um UploadFile JSON na memória para envio.
+    Cria um JSON na memória e retorna um BytesIO com o conteúdo.
     """
     json_str = json.dumps(data, ensure_ascii=False, indent=4)
-    json_bytes = BytesIO(json_str.encode('utf-8'))
+    json_bytes = BytesIO(json_str.encode('utf-8'))  # Cria um BytesIO
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"contact_{timestamp}.json"
 
-    return UploadFile(filename=filename, file=json_bytes, content_type="application/json")
+    return filename, json_bytes  # Retorna nome e conteúdo em bytes
 
-def send_to_datalake(file: UploadFile):
+def send_to_datalake(filename: str, file: BytesIO):
     """
     Envia um arquivo JSON para a API do Data Lake no formato multipart/form-data.
     """
@@ -79,10 +79,10 @@ def send_to_datalake(file: UploadFile):
     }
 
     # Move o ponteiro para o início do arquivo
-    file.file.seek(0)
+    file.seek(0)
 
     files = {
-        "file": (file.filename, file.file.read(), "application/json")  # Pega o nome direto do UploadFile
+        "file": (filename, file.read(), "application/json")  # Corrige envio
     }
 
     response = requests.post(url, params=params, headers=headers, files=files)
