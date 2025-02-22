@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request, UploadFile
+from fastapi import APIRouter, Request, UploadFile, File
 import logging
 import urllib.parse
 import json
-import io
+from io import BytesIO
 import datetime
 import requests
+import httpx
 
 
 router = APIRouter()
@@ -53,18 +54,26 @@ def parse_webhookdata_json(body_str: str):
     return cleaned_data
 
 
-def create_json_in_memory(data):
+def create_json_in_memory(data: dict):
     """
     Cria um arquivo JSON na memória usando BytesIO.
     """
-    json_bytes = io.BytesIO()
-    json.dump(data, json_bytes, ensure_ascii=False, indent=4)
-    json_bytes.seek(0)  # Reseta o ponteiro para o início do arquivo
+    
+    # Converte o dicionário para um JSON string
+    json_str = json.dumps(data, ensure_ascii=False, indent=4)
+
+    # Cria um objeto BytesIO e escreve o JSON nele
+    json_io = BytesIO(json_str.encode('utf-8'))
+
+    # Cria um objeto BytesIO e escreve o JSON nele
+    json_io = BytesIO(json_str.encode('utf-8'))
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"contact_{timestamp}.json"
+    
+    # Define um nome para o arquivo (opcional, mas útil em Uploads)
+    json_io.name = f"contact_{timestamp}.json"
 
-    return filename, json_bytes.getvalue() # Retorna o nome do arquivo e os bytes do JSON
+    return json_io
 
 async def send_to_datalake(filename: str, file: UploadFile):
     """
@@ -80,21 +89,13 @@ async def send_to_datalake(filename: str, file: UploadFile):
         "accept": "application/json"
     }
 
-    # Lendo o arquivo como bytes
+    # Lê o conteúdo do arquivo enviado pelo FastAPI
     file_content = await file.read()
-    
-    files = {"file": (filename, io.BytesIO(file_content), "application/json")}
 
-    response = requests.post(url, headers=headers, params=params, files=files)
-
-    if response.status_code == 200:
-        response_json = response.json()
-        logging.info(f"Arquivo enviado com sucesso para o Data Lake: {response_json}")
-        return response_json  # Retorna a resposta real da API do Data Lake
-    else:
-        logging.error(f"Erro ao enviar arquivo para o Data Lake: {response.status_code}, {response.text}")
-        return {
-            "status": "error",
-            "code": response.status_code,
-            "message": response.text
+    async with httpx.AsyncClient() as client:
+        files = {
+            "file": (filename, file_content, "application/json")
         }
+        response = await client.post(url, params=params, headers=headers, files=files)
+
+    return response.json()
