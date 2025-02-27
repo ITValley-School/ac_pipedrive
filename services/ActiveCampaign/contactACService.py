@@ -72,7 +72,7 @@ def send_to_datalake(filename: str, file: BytesIO):
     params = {
         "storage_account_name": "saactivecampaign",
         "file_system_name": "bronze",
-        "directory_name": "contacts"
+        "directory_name": "source_ac"
     }
     headers = {
         "accept": "application/json"
