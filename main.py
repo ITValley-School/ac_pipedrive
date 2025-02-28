@@ -166,7 +166,7 @@ async def webhook_pos_ia(
         contact_utm_medium=contact_utm_medium,
         contact_utm_content=contact_utm_content,
         pipeline_id=3,  # Funil Pós IA
-        stage_id=11  # Estágio: Lead Frio
+        stage_id=33  # Estágio: Lead Frio
     )
 
 
@@ -199,7 +199,7 @@ async def webhook_escola_ia(
         contact_utm_medium=contact_utm_medium,
         contact_utm_content=contact_utm_content,
         pipeline_id=2,  # Funil Escola IA
-        stage_id=6  # Estágio: Lead Frio
+        stage_id=34  # Estágio: Lead Frio
     )
 
 # 🔹 Função genérica para processar os dados recebidos
