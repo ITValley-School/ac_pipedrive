@@ -16,8 +16,8 @@ PIPELINE_STAGE_ID = 1
 
 # Mapeamento de listas para funis
 LIST_TO_PIPELINE = {
-    "61": {"pipeline_id": 3, "stage_id": 31},  # Lista 61 → Funil Pós IA (estágio: Lead Frio)
-    "70": {"pipeline_id": 2, "stage_id": 30}   # Lista 70 → Funil Escola IA (estágio: Lead Frio)
+    "61": {"pipeline_id": 3, "stage_id": 33},  # Lista 61 → Funil Pós IA (estágio: Lead Frio)
+    "70": {"pipeline_id": 2, "stage_id": 34}   # Lista 70 → Funil Escola IA (estágio: Lead Frio)
 }
 
 UTM_FIELDS = {
