@@ -65,23 +65,20 @@ async def get_contact_with_utm_fields(contact_id: str):
         if not AC_API_KEY:
             raise HTTPException(status_code=500, detail="ActiveCampaign API key not configured")
         
-        # Get basic contact data
-        contact_url = f"{AC_API_URL}/api/3/contacts/{contact_id}"
         headers = {"Api-Token": AC_API_KEY}
         
+        # Get basic contact data
+        contact_url = f"{AC_API_URL}/api/3/contacts/{contact_id}"
         contact_response = requests.get(contact_url, headers=headers)
         contact_response.raise_for_status()
         
         contact_data = contact_response.json().get('contact')
         if not contact_data:
             raise HTTPException(status_code=404, detail="Contact not found")
-        
-#apenas para saber quais dados ele me manda
-        #print(contact_data)
 
         #apenas para saber quais dados ele me manda
         #print(contact_data)
-
+        
         # Get all field values for this contact
         field_values_url = f"{AC_API_URL}/api/3/contacts/{contact_id}/fieldValues"
         field_values_response = requests.get(field_values_url, headers=headers)
@@ -90,38 +87,35 @@ async def get_contact_with_utm_fields(contact_id: str):
         #apenas para saber quais dados ele me manda
         #print(field_values_response.json())
 
-        
-        # Get all custom fields to match IDs with names
-        fields_url = f"{AC_API_URL}/api/3/fields"
-        fields_response = requests.get(fields_url, headers=headers)
-        fields_response.raise_for_status()
-        
-        custom_fields = fields_response.json().get('fields', [])
-        
         # Correctly access the fieldValues from the response
         field_values = field_values_response.json().get('fieldValues', [])
         
-        # Create a dictionary to map field IDs to field information
-        field_id_to_info = {}
-        for field in custom_fields:
-            field_id_to_info[field.get('id')] = field
-        
-        # Map field values to their names for UTM fields
+        # Initialize the dictionaries for custom fields
         utm_fields = {}
         all_custom_fields = {}
         
+        # For each field value, fetch field details to get the field name
         for field_value in field_values:
-            field_id = field_value.get('field')
-            if field_id in field_id_to_info:
-                field_info = field_id_to_info[field_id]
-                field_title = field_info.get('title')
+            field_url = field_value.get('links', {}).get('fieldValues')
+            
+            if field_url:
+                # Call the field URL to get field details
+                field_response = requests.get(field_url, headers=headers)
                 
-                # Add to UTM fields if it matches our list
-                if field_title in UTM_FIELDS:
-                    utm_fields[field_title] = field_value.get('value')
-                
-                # Also collect all custom fields for reference
-                all_custom_fields[field_title] = field_value.get('value')
+                if field_response.status_code == 200:
+                    field_data = field_response.json().get('field', {})
+                    field_title = field_data.get('title')
+                    
+                    if field_title:
+                        # Store field value
+                        field_value_text = field_value.get('value', '')
+                        
+                        # Add to UTM fields if it matches our list
+                        if field_title in UTM_FIELDS:
+                            utm_fields[field_title] = field_value_text
+                        
+                        # Add to all custom fields
+                        all_custom_fields[field_title] = field_value_text
         
         # Create result with contact data and UTM fields
         result = {
